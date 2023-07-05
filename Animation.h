@@ -1,21 +1,27 @@
-#include <iostream>
-#include <SFML/Graphics.hpp>
-using namespace sf;
-class Animation{
+// #include <iostream>
+// #include <SFML/Graphics.hpp>
+// #include "entityStates.h"
 
-public:
-    Animation();
-    ~Animation();
-    void update(int row, float deltaTime, bool faceRight);
-    IntRect uvRect;
+// #ifndef ANIMATION_H
+// #define ANIMATION_H
 
-private:
-    Vector2u imageCount;
-    Vector2u currImage;
-    void setAttributes(Texture *Texture, Vector2u imageCount, float switchTime);
-    
-    float totalTime;
-    float switchTime;
+// class Animation{
 
+// public:
+//     Animation(Texture textureSheet, int imageCount,Vector2f imageDimensions,float switchTime);
+//     ~Animation();
+//     void update(Sprite &playerSprite, movementState state);
+//     IntRect uvRect;
 
-};
+// private:
+//     int imageCount;
+//     Vector2u currImage;
+//     Vector2f imageDimensions;
+//     float switchTime;
+//     Clock animationClock;
+//     float maxFrameCoord;
+//     Texture textureSheet;
+
+// };
+
+// #endif // ANIMATION_H
