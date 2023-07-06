@@ -8,6 +8,25 @@
 using namespace std;
 
 
+
+#include <string>
+#include <sstream>
+#include <SFML/System.hpp>
+
+#include <SFML/System.hpp>
+
+sf::Vector2f parseStringToVector2f(const std::string& str) {
+    float x, y;
+
+    if(sscanf(str.c_str(), "(%f, %f)", &x, &y) != 2) {
+        throw std::runtime_error("Invalid format");
+    }
+    cout << "x: " << x << " y:" << y << endl;
+    return sf::Vector2f(x, y);
+}
+
+
+
 Game::Game() : background(5.0f)
 {
     this->width = 1280;
@@ -30,24 +49,44 @@ Game::Game() : background(5.0f)
     this->gameLevel = 1;
     snprintf(this->levelString, sizeof(this->levelString), "Level%d.txt", this->gameLevel);
     this->testTexture.loadFromFile("./wallTextures/Stone/Stones.png");
-    this->testTile = new floatingTile(1270.f, 1472.f, true, value, testTexture, 2);
+    
     std::string line;
     std::ifstream file(this->levelString);       
     // for(int i = 0; )
     int yLvl = 0;
     int xlvl;
-   
+    std::string floatingTileLines;
+    std::ifstream floatingTileFile("FloatingTilePositions.txt");
+    while(std::getline(floatingTileFile, floatingTileLines)){
+        Vector2f positions = parseStringToVector2f(floatingTileLines);
+        this->floatingTilePos.push_back(positions);
+    }
+
+
+    
+    int floatingTileCount = 0;
     while(std::getline(file, line)){
         xlvl = 0;
         for(char& c : line) {
             // Now 'c' is the character in the line.
-            std::cout << c;
+           
             if(c == '='){
                 Tile *sb = new Tile();
-                sb->coordinates = Vector2f(xlvl, yLvl);
+                sb->coordinates = Vector2f(xlvl, this->initialBlockY);
                 sb->block.setPosition(sb->coordinates);
                 this->tiles.push_back(sb);
+            }else if (c == '-')
+            {   
+                cout << "\nupperBound: " << this->floatingTilePos[floatingTileCount].y*64 << endl;
+                cout << "\nlowerBound: " << this->floatingTilePos[floatingTileCount].x*64 << endl;
+                floatingTile *iteratorTile = new floatingTile(this->floatingTilePos[floatingTileCount].x*64, this->floatingTilePos[floatingTileCount].y*64, true, yLvl, this->testTexture, 2);
+                iteratorTile->num = floatingTileCount;
+                iteratorTile->block.setPosition(xlvl, yLvl);
+                this->floatingTiles.push_back(iteratorTile);
+
+                floatingTileCount++;
             }
+            
 
 
             xlvl += 64;
@@ -88,7 +127,10 @@ Game::~Game(){
     for(Tile *sb : this->tiles){
         delete sb;
     }
-    delete this->testTile;
+    for(floatingTile* sb: this->floatingTiles){
+        delete sb;
+    }
+    
 }
 
 
@@ -105,16 +147,6 @@ void Game::pollEvents(){
 
 
 void Game::drawGround(){
-    
-    sf::Vector2f center = view.getCenter();
-    sf::Vector2f size = view.getSize();
-    int startIdx = static_cast<int>((center.x - size.x / 2) / 64); 
-    int endIdx = static_cast<int>((center.x + size.x / 2) / 64);
-    startIdx = std::max(startIdx, 0);
-    endIdx = std::min(endIdx, static_cast<int>(this->tiles.size()) - 1);
-        for(int i = startIdx; i <= endIdx; i++){
-        window->draw(this->tiles[i]->block);
-    } 
 }
 
 
@@ -125,12 +157,20 @@ void Game::render(){
     background.render(*window);
 
     window->draw(playerOne.player);
-    window->draw(testTile->block);
+   
     //window->draw(this->rect);
     for(bullet *b:playerOne.bullets){
         window->draw(b->sprite);
     }
-    drawGround();
+    // drawGround();
+    for(Tile *t :this->tiles){
+        window->draw(t->block);
+    }
+
+    for(floatingTile *tile:this->floatingTiles){
+        window->draw(tile->block);
+    }
+
     window->draw(this->testEnemy.player);
     window->display();
     //window->draw(testTile->block);
@@ -141,7 +181,7 @@ void Game::update(){
     // We check whether the player has moved since the last frame.
     // You will need to implement the Player::hasMoved() function.
     bool playerHasMoved = playerOne.update(*window);
-    
+    //cout << this->playerOne.player.getPosition().x << std::endl;
     // Update the parallax background.
     background.update(playerHasMoved, view);
     playerOne.onGround = false;
@@ -153,18 +193,24 @@ void Game::update(){
         }
     }
     playerOne.onFloatingBlock = false;
-    if(playerOne.isOnTopOfBlock(testTile->block)){
-        playerOne.onGround = true;
-        playerOne.onFloatingBlock = true;
-        playerOne.xVel = testTile->movementSpeed;
-        playerOne.floatingBlockInteract = true;
+    for(floatingTile *floatingBlock: this->floatingTiles){
+        if(playerOne.isOnTopOfBlock(floatingBlock->block)){
+            playerOne.onGround = true;
+            playerOne.onFloatingBlock = true;
+            playerOne.floatingBlockInteract = true;
+            floatingBlock->playerOnTop = true;
+        }else{
+            floatingBlock->playerOnTop = false;
+        }
     }
 
     
     //std::cout << this->testEnemy.player.getPosition().y << endl;
     //std::cout << playerOne.player.getPosition().y << endl;
     playerOne.update(*window);
-    testTile->update(&playerOne.player, playerOne.onFloatingBlock);
+    for(floatingTile *tile : this->floatingTiles){
+        tile->update(&playerOne.player);
+    }
     sf::Vector2f playerPos = playerOne.player.getPosition();
     float viewY = std::min(playerPos.y, initialBlockY - window->getSize().y / 2 + playerOne.player.getGlobalBounds().height);
     view.setCenter(playerPos.x, viewY);

@@ -33,6 +33,7 @@ Player::Player(){
     this->yVel = 0.0f;
     sf::FloatRect localBounds = player.getLocalBounds();
     sf::IntRect rect = player.getTextureRect();
+    
     std::cout << "Rectangle Dimensions: " << "Width: " << rect.width << ", Height: " << rect.height << std::endl;
     
     
@@ -40,6 +41,8 @@ Player::Player(){
     this->player.setOrigin(localBounds.left + localBounds.width/2.0f, 
                  localBounds.top  + localBounds.height/2.0f);
     this->player.setPosition(Vector2f(100.0f, 200.0f));
+    this->prevPos = Vector2f(0.f, 0.f);
+
     this->player.setScale(Vector2f(2.0f, 2.0f));
     this->state = movementState::Idle;
     this->lastState = movementState::Idle;
@@ -51,6 +54,7 @@ Player::Player(){
     this->jumpTimer.restart();
     this->xVel = 0;
     this->floatingBlockInteract = false;
+    
     
 
 };
@@ -147,6 +151,12 @@ void Player::groundYvalSetter(float value){
 }
 
 
+bool isColliding(const sf::Sprite& a, const sf::Sprite& b) {
+    return a.getGlobalBounds().intersects(b.getGlobalBounds());
+}
+
+
+
 bool Player::isOnTopOfBlock(Sprite block) {
     // Get the bounds (i.e., the position, width, and height) of the player and block
     sf::FloatRect playerBounds = this->player.getGlobalBounds();
@@ -154,6 +164,7 @@ bool Player::isOnTopOfBlock(Sprite block) {
 
     // Check if the player's bottom edge is intersecting with the block's top edge
     bool isAboveBlock =  (this->player.getPosition().y + this->player.getGlobalBounds().height/2) >= block.getPosition().y;
+    bool isNotBelow = (this->player.getPosition().y - this->player.getGlobalBounds().height/2) <= block.getPosition().y;
     float blockTopLeft = block.getPosition().x;
     float blockTopRight = block.getPosition().x + block.getGlobalBounds().width;
 
@@ -161,11 +172,13 @@ bool Player::isOnTopOfBlock(Sprite block) {
     // Check if the player's x coordinate is within the x boundaries of the block
     // bool isWithinBlockHorizontally = ((player.getPosition().x - (playerBounds.width/2)) >= block.getPosition().x) && (((player.getPosition().x - (playerBounds.width/2)) <= block.getPosition().x+blockBounds.width));
     
-    if(isAboveBlock && Horizontal){
-        player.setPosition(player.getPosition().x, block.getPosition().y - (player.getGlobalBounds().height/2));
+    if(isAboveBlock && Horizontal && isNotBelow){
+        if(player.getPosition().y < block.getPosition().y){
+            player.setPosition(player.getPosition().x, block.getPosition().y - (player.getGlobalBounds().height/2));
+        }
     }
     
-    return isAboveBlock && Horizontal;
+    return isAboveBlock && Horizontal && isNotBelow;
 }
 
 
@@ -196,24 +209,30 @@ int Player::update(RenderWindow &win){
 
     if(Keyboard::isKeyPressed(Keyboard::D)){
         this->state = movementState::Right;
+        this->prevPos = player.getPosition();
         this->player.move(movementSpeed, 0);
         keysPressed = true;
         this->faceRight = true;
         updateAnimations();
+        
     }
 
     if(Keyboard::isKeyPressed(Keyboard::A)){ 
         this->state = movementState::Left;
+        this->prevPos = player.getPosition();
         this->player.move(-movementSpeed, 0);
         keysPressed = true;
         updateAnimations();
         this->faceRight = false;
+        
     }
 
     if(Keyboard::isKeyPressed(Keyboard::Space) && this->onGround && this->jumpTimer.getElapsedTime().asSeconds() > 0.1f){
+        this->prevPos = player.getPosition();
         this->state = movementState::Jumping;
         this->yVel = -this->jumpSpeed; // Set yVel to negative jumpSpeed, not subtract it
         this->jumpTimer.restart();
+        
     }
 
     

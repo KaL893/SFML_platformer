@@ -25,12 +25,13 @@ class Game{
         RectangleShape rect;
         float initialBlockY;
         vector<floatingTile*> floatingTiles;
-        floatingTile *testTile;
+        
         Texture testTexture;
         bool checkPlayerOnGround();
         Enemy testEnemy;
         int gameLevel;
         char levelString[100];
+        vector<Vector2f> floatingTilePos;
         
 
     public:

@@ -10,21 +10,23 @@ floatingTile::floatingTile(float lowerBound, float upperBound,bool xMoving,float
     this->block.setTextureRect(rect);
     this->block.setPosition(this->movementRange.x, yVal);
     this->movementSpeed = movementSpeed;
+    this->playerOnTop = false;
+    this->vel = 1;
     
 }
 
 
-void floatingTile::update(Sprite *player, bool playerOn){
+void floatingTile::update(Sprite *player){
     if(this->xMoving){
-        if(this->block.getPosition().x == this->movementRange.x){
+        if(this->block.getPosition().x <= this->movementRange.x){
             this->vel = 1;
-        }else if(this->block.getPosition().x == this->movementRange.y){
+        }else if(this->block.getPosition().x >= this->movementRange.y){
             this->vel = -1;
         }
     }
-
+    
     this->block.move(this->movementSpeed * this->vel, 0);
-    if(playerOn){
+    if(this->playerOnTop){
         player->move(this->movementSpeed * this->vel, 0);
     }
 

@@ -31,6 +31,8 @@ private:
     Clock bulletTimer;
     bool shootingAnimationFinished;
     bool faceRight;
+    Vector2f prevPos;
+
     
     //vector<floatingTile*> floatingTiles;
 

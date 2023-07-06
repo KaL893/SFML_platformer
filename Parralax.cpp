@@ -55,11 +55,11 @@ Parralax::Parralax(float playerMovementSpeed){
     // this->layerOne.setScale(desiredWidth / spriteSize.x, (desiredHeight-600) / spriteSize.y);
     
     // Set movement speed
-    this->playerMovementSpeed = playerMovementSpeed;
-    this->layerOneMovementSpeed = 0.8f * playerMovementSpeed;
-    this->layerTwoMovementSpeed = 0.6f * playerMovementSpeed;
-    this->layerThreeMovementSpeed = 0.4f * playerMovementSpeed;
-    this->layerFourMovementSpeed = 0.2f * playerMovementSpeed;
+    this->playerMovementSpeed = 1;
+    this->layerOneMovementSpeed = 0.8f ;
+    this->layerTwoMovementSpeed = 0.6f ;
+    this->layerThreeMovementSpeed = 0.4f;
+    this->layerFourMovementSpeed = 0.2f;
 
 
 
