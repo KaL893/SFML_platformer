@@ -2,6 +2,7 @@
 #include "Enemy.h"
 
 
+
 Enemy::Enemy(){
     this->movementTexture.loadFromFile("./altSolider/Soldier_2/walk.png");
     this->idleTexture.loadFromFile("./altSolider/Soldier_1/IdleThree.png");
@@ -28,16 +29,21 @@ Enemy::Enemy(){
     this->movementRange = movementRange;
     this->movementDirection = 1;
     this->movementSpeed = 2;
+    this->shootingFinished = true;
+    
 }
 
 
 Enemy::~Enemy(){
-
+    for(bullet *b : this->bullets){
+        delete b;
+    }
 }
 
 
 void Enemy::initAnimations(){
     this->animationTimer.restart();
+    this->shootingAnimationTimer.restart();
 }
 //TODO: MAKE ABSTRACT
 void Enemy::updateAnimations(){
@@ -46,7 +52,7 @@ void Enemy::updateAnimations(){
     if(this->state == movementState::Right){
         this->player.setTexture(this->movementTexture);
         
-        if(this->animationTimer.getElapsedTime().asSeconds() >= 0.1f){
+        if(this->animationTimer.getElapsedTime().asSeconds() >= 0.2f){
             this->rect.left += 128.0f;
             if(this->rect.left >= 896.0f){
                 
@@ -59,7 +65,7 @@ void Enemy::updateAnimations(){
     }else if(this->state == movementState::Left){
         this->player.setTexture(this->movementTexture);
         
-        if(this->animationTimer.getElapsedTime().asSeconds() >= 0.1f){
+        if(this->animationTimer.getElapsedTime().asSeconds() >= 0.2f){
             this->rect.left += 128.0f;
             if(this->rect.left >= 896.0f){
                 //std::cout << "Hello, world!" << std::endl;
@@ -72,15 +78,37 @@ void Enemy::updateAnimations(){
     }else if(this->state == movementState::Shooting){
         
         this->player.setTexture(this->shootingTexture);
-        if(this->animationTimer.getElapsedTime().asSeconds() >= 0.1f){
+        if(this->shootingAnimationTimer.getElapsedTime().asSeconds() >= 0.2f){
             this->rect.left += 128.0f;
+
+            if(this->rect.left == 256.0f){
+                std::string str = "./Bullet.png";
+                Vector2f bulletVelocity;
+                if(this->pastState == movementState::Left){
+                    bulletVelocity = Vector2f(-1, 0);
+                }else{
+                    bulletVelocity = Vector2f(1, 0);
+                }
+                bullet *sb = new bullet(str, 15, bulletVelocity * 15.f);
+                if(this->pastState == movementState::Left){
+                    sb->sprite.setPosition(this->player.getPosition().x-64,this->player.getPosition().y-40);
+                }else{
+                    sb->sprite.setPosition(this->player.getPosition().x+64,this->player.getPosition().y-40);
+                }
+                this->bullets.push_back(sb);
+            }
             if(this->rect.left >= 384.0f){
                 
                 //std::cout << "Hello, world!" << std::endl;
+                
                 this->rect.left = 0.0f;
-                this->state = movementState::Idle;
+               
+                this->shootingFinished = true;
+                
+                this->state = this->pastState;
+                
             }
-            this->animationTimer.restart();
+            this->shootingAnimationTimer.restart();
         }
         this->player.setTextureRect(this->rect);
         if(this->faceRight){
@@ -113,18 +141,62 @@ void Enemy::animateIdle() {
 }
 
 
-void Enemy::update(){
-    if(this->player.getPosition().x <= this->movementRange.x){
-        this->movementDirection = 1;
-        this->state = movementState::Right;
-        
-    }else if (this->player.getPosition().x >= this->movementRange.y)
-    {
-        this->movementDirection = -1;
-        this->state = movementState::Left;
-        
+void Enemy::render(RenderWindow *target){
+    target->draw(this->player);
+    for(bullet *b:this->bullets){
+        target->draw(b->sprite);
+    }
+}
+
+
+void Enemy::update(Sprite *playerSprite){
+    if(this->shootingFinished){
+        if(this->player.getPosition().x <= this->movementRange.x){
+            this->movementDirection = 1;
+            this->pastState = this->state;
+            this->state = movementState::Right;
+
+        }else if (this->player.getPosition().x >= this->movementRange.y)
+        {
+            this->movementDirection = -1;
+            this->pastState = this->state;
+            this->state = movementState::Left;
+        }
     }
 
-    this->player.move(this->movementDirection * this->movementSpeed, 0);
+
+
+    if(this->state == movementState::Left){
+        if(this->player.getPosition().x -  playerSprite->getPosition().x <= 400){
+            if(this->bulletTimer.getElapsedTime().asSeconds() >= 1.5f){
+                Vector2f bulletVelocity = Vector2f(-1.f, 0);
+                this->bulletTimer.restart();
+                this->pastState = this->state;
+                this->state = movementState::Shooting;
+                this->rect.left = 0;
+                this->shootingFinished = false;
+            }
+        }
+    }else if (this->state == movementState::Right)
+    {
+        if( playerSprite->getPosition().x - this->player.getPosition().x >= 400){
+            if(this->bulletTimer.getElapsedTime().asSeconds() >= 1.5f){
+                Vector2f bulletVelocity = Vector2f(1, 0);
+                std::string str = "./Bullet.png";
+                this->bulletTimer.restart();
+                this->pastState = this->state;
+                this->rect.left = 0;
+                this->state = movementState::Shooting;
+                this->shootingFinished = false;
+            }
+        }
+    }
+    
+    for(bullet *b :this->bullets){
+        b->update();
+    }
+    if(this->state != movementState::Shooting){
+        this->player.move(this->movementDirection * this->movementSpeed, 0);
+    }
     updateAnimations();
 }

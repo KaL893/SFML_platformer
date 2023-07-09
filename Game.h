@@ -32,6 +32,7 @@ class Game{
         int gameLevel;
         char levelString[100];
         vector<Vector2f> floatingTilePos;
+        Clock frameTimer;
         
 
     public:

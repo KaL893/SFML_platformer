@@ -6,6 +6,8 @@ using namespace sf;
 #include "bullet.h"
 #include <vector>
 
+using namespace sf;
+using namespace std;
 class Enemy{
 
     private:
@@ -36,14 +38,20 @@ class Enemy{
         void animateIdle();
         int movementDirection;
         int movementSpeed;
+        bool shootingFinished;
+        movementState pastState;
+        Clock shootingAnimationTimer;
 
 
     public:
+        vector<bullet*> bullets;
         Vector2f movementRange;
         Sprite player;
         Enemy();
         ~Enemy();
-        void update();
+        void update(Sprite *playerSprite);
+        void shoot();
+        void render(RenderWindow *target);
 
 
     

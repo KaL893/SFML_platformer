@@ -3,8 +3,10 @@
 #include "Game.h"
 #include "bullet.h"
 #include "string"
+#include "Grenade.h"
 #include <fstream>
 #include <string>
+#include <vector>
 using namespace std;
 
 
@@ -85,6 +87,10 @@ Game::Game() : background(5.0f)
                 this->floatingTiles.push_back(iteratorTile);
 
                 floatingTileCount++;
+            }else if(c == 'P'){
+                playerOne.player.setPosition(xlvl, yLvl);
+            }else if(c == 'E'){
+                this->testEnemy.player.setPosition(xlvl, yLvl);
             }
             
 
@@ -112,6 +118,7 @@ Game::Game() : background(5.0f)
     this->background.setTopLeftCoordinates(topLeftWorld);
     this->testEnemy.movementRange = Vector2f(800, 1000);
     this->testEnemy.player.setPosition(Vector2f(800, playerOne.player.getPosition().y+60));
+    this->frameTimer.restart();
 }
 
 
@@ -154,13 +161,17 @@ void Game::render(){
     window->clear();
 
     // Render the parallax background.
-    background.render(*window);
+    //background.render(*window);
 
     window->draw(playerOne.player);
    
     //window->draw(this->rect);
     for(bullet *b:playerOne.bullets){
         window->draw(b->sprite);
+    }
+
+    for(Grenade *g:this->playerOne.grenades){
+        window->draw(g->sprite);
     }
     // drawGround();
     for(Tile *t :this->tiles){
@@ -171,19 +182,26 @@ void Game::render(){
         window->draw(tile->block);
     }
 
-    window->draw(this->testEnemy.player);
+    this->testEnemy.render(window);
     window->display();
     //window->draw(testTile->block);
+    this->frameTimer.restart();
 }
 
 void Game::update(){
     
     // We check whether the player has moved since the last frame.
     // You will need to implement the Player::hasMoved() function.
-    bool playerHasMoved = playerOne.update(*window);
+    float dt = this->frameTimer.getElapsedTime().asSeconds();
+    bool playerHasMoved = playerOne.update(*window, dt);
+
+    
+
     //cout << this->playerOne.player.getPosition().x << std::endl;
     // Update the parallax background.
-    background.update(playerHasMoved, view);
+    //background.update(playerHasMoved, view);
+    playerOne.checkForBulletCollision(this->testEnemy.bullets);
+    //cout << playerOne.getState() << ": 1" << endl;
     playerOne.onGround = false;
     for(Tile *tile:this->tiles){
         if(playerOne.isOnTopOfBlock(tile->block)){
@@ -204,17 +222,17 @@ void Game::update(){
         }
     }
 
-    
+    playerOne.update(*window, dt);
     //std::cout << this->testEnemy.player.getPosition().y << endl;
-    //std::cout << playerOne.player.getPosition().y << endl;
-    playerOne.update(*window);
+    //std::cout << playerOne.player.getPosition().y << endl
+    //cout << playerOne.getState() << ": 2" << endl;
     for(floatingTile *tile : this->floatingTiles){
         tile->update(&playerOne.player);
     }
     sf::Vector2f playerPos = playerOne.player.getPosition();
     float viewY = std::min(playerPos.y, initialBlockY - window->getSize().y / 2 + playerOne.player.getGlobalBounds().height);
     view.setCenter(playerPos.x, viewY);
-    this->testEnemy.update();
+    this->testEnemy.update(&playerOne.player);
     this->rect.setSize(Vector2f(playerOne.player.getGlobalBounds().width, playerOne.player.getGlobalBounds().height));
     this->rect.setPosition(Vector2f(playerOne.player.getPosition().x, 328.f)); //playerOne.player.getPosition().y
     window->setView(view);

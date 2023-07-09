@@ -10,7 +10,7 @@ using namespace sf;
 #define PROJECTILE_H
 class Projectile{
 
-    private:
+    protected:
         Texture texture;
         Vector2f velocity;
         bool active;
@@ -19,8 +19,8 @@ class Projectile{
     public:
         Sprite sprite;
         Projectile(std::string& str, float movementSpeed, Vector2f velocity);
-        ~Projectile();
-        void update();
+        virtual ~Projectile();
+        virtual void update();
 
 
 
