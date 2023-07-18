@@ -5,14 +5,15 @@ using namespace sf;
 #include "entityStates.h"
 #include "bullet.h"
 #include <vector>
-
+#include "healthBar.h"
+#include <SFML/Audio.hpp>
 using namespace sf;
 using namespace std;
 class Enemy{
 
     private:
         Texture movementTexture;
-        
+        Texture hurtTexture;
         Texture idleTexture;
         Texture shootingTexture;
         unsigned int row;
@@ -41,15 +42,26 @@ class Enemy{
         bool shootingFinished;
         movementState pastState;
         Clock shootingAnimationTimer;
+        Clock hurtAnimationTimer;
+        bool hurtAnimationFinished;
+        bool invincible;
+        SoundBuffer shootingSound;
+        SoundBuffer hurtSound;
+        Sound currSound;
+    
+
 
 
     public:
+        Clock damageTimer;
+        float health;
+        healthBar healthStatus;
         vector<bullet*> bullets;
         Vector2f movementRange;
         Sprite player;
         Enemy();
         ~Enemy();
-        void update(Sprite *playerSprite);
+        void update(Sprite *playerSprite, vector<Sprite*> playerBuletSprites, vector<Sprite*> playerGrenadeSprites);
         void shoot();
         void render(RenderWindow *target);
 

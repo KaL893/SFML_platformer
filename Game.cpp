@@ -35,7 +35,9 @@ Game::Game() : background(5.0f)
     this->height = 1280;
     this->fps = 60;
     title = "";
-    this->initialBlockY = 328.f;
+    this->initialBlockY = 512;
+    backGroundView.setSize(262, 160);
+    backGroundView.setCenter(150, 81);
     float value;
     
     
@@ -51,7 +53,8 @@ Game::Game() : background(5.0f)
     this->gameLevel = 1;
     snprintf(this->levelString, sizeof(this->levelString), "Level%d.txt", this->gameLevel);
     this->testTexture.loadFromFile("./wallTextures/Stone/Stones.png");
-    
+    int enemyCount;
+    vector<Vector2f> enemyPositions;
     std::string line;
     std::ifstream file(this->levelString);       
     // for(int i = 0; )
@@ -64,6 +67,18 @@ Game::Game() : background(5.0f)
         this->floatingTilePos.push_back(positions);
     }
 
+    std::string soldierMovementLines;
+    std::ifstream soldierMovementRanges("soldierMovementRanges.txt");
+    while(std::getline(soldierMovementRanges, soldierMovementLines)){
+        Vector2f positions = parseStringToVector2f(soldierMovementLines);
+        enemyPositions.push_back(positions);
+    }
+    this->OST.loadFromFile("OST.ogg");
+    this->gameSound.setLoop(true);
+    this->gameSound.setBuffer(this->OST);
+    //this->gameSound.play();
+
+
 
     
     int floatingTileCount = 0;
@@ -73,10 +88,13 @@ Game::Game() : background(5.0f)
             // Now 'c' is the character in the line.
            
             if(c == '='){
-                Tile *sb = new Tile();
-                sb->coordinates = Vector2f(xlvl, this->initialBlockY);
-                sb->block.setPosition(sb->coordinates);
+                Tile *sb_raw = new Tile();
+                sb_raw->coordinates = Vector2f(xlvl, yLvl);
+                sb_raw->block.setPosition(sb_raw->coordinates);
+                std::shared_ptr<Tile> sb(sb_raw);
                 this->tiles.push_back(sb);
+                this->tileSprites.push_back(&(sb->block));
+                
             }else if (c == '-')
             {   
                 cout << "\nupperBound: " << this->floatingTilePos[floatingTileCount].y*64 << endl;
@@ -85,12 +103,17 @@ Game::Game() : background(5.0f)
                 iteratorTile->num = floatingTileCount;
                 iteratorTile->block.setPosition(xlvl, yLvl);
                 this->floatingTiles.push_back(iteratorTile);
-
+                
                 floatingTileCount++;
             }else if(c == 'P'){
                 playerOne.player.setPosition(xlvl, yLvl);
             }else if(c == 'E'){
-                this->testEnemy.player.setPosition(xlvl, yLvl);
+                Enemy *newEnemyRaw = new Enemy();
+                newEnemyRaw->player.setPosition(xlvl, yLvl);
+                newEnemyRaw->healthStatus = healthBar(10.f, 70.f, Vector2f(xlvl-30, yLvl-100));
+                newEnemyRaw->movementRange = enemyPositions[enemyCount++];
+                shared_ptr<Enemy> newEnemy(newEnemyRaw);
+                this->enemies.push_back(newEnemy); 
             }
             
 
@@ -114,10 +137,8 @@ Game::Game() : background(5.0f)
     
 
     sf::Vector2i topLeftWindow(0, 0); // Top-left corner of the window in window coordinates
-    sf::Vector2f topLeftWorld = window->mapPixelToCoords(topLeftWindow);
-    this->background.setTopLeftCoordinates(topLeftWorld);
-    this->testEnemy.movementRange = Vector2f(800, 1000);
-    this->testEnemy.player.setPosition(Vector2f(800, playerOne.player.getPosition().y+60));
+    
+    // this->testEnemy.player.setPosition(Vector2f(800, playerOne.player.getPosition().y+60));
     this->frameTimer.restart();
 }
 
@@ -131,9 +152,6 @@ void Game::initWindow(){
 
 Game::~Game(){
     delete window;
-    for(Tile *sb : this->tiles){
-        delete sb;
-    }
     for(floatingTile* sb: this->floatingTiles){
         delete sb;
     }
@@ -157,60 +175,93 @@ void Game::drawGround(){
 }
 
 
-void Game::render(){
+void Game::render() {
     window->clear();
 
-    // Render the parallax background.
-    //background.render(*window);
+    // Set the background view and draw the parallax background
+    window->setView(backGroundView);
+    background.render(*window);
 
+    //Set the game view before drawing the game objects
+    window->setView(view);
+
+    //Draw the player
     window->draw(playerOne.player);
-   
-    //window->draw(this->rect);
-    for(bullet *b:playerOne.bullets){
+    if(playerOne.damageTimer.getElapsedTime().asSeconds() <= 0.6f){
+        playerOne.healthStatus.draw(window);
+    }
+    // Draw the other elements
+    for(bullet *b : playerOne.bullets) {
         window->draw(b->sprite);
     }
 
-    for(Grenade *g:this->playerOne.grenades){
+    for(Grenade *g : this->playerOne.grenades) {
         window->draw(g->sprite);
     }
-    // drawGround();
-    for(Tile *t :this->tiles){
+
+    for(auto& t : this->tiles) {
         window->draw(t->block);
     }
 
-    for(floatingTile *tile:this->floatingTiles){
+
+    for(floatingTile *tile : this->floatingTiles) {
         window->draw(tile->block);
     }
 
-    this->testEnemy.render(window);
+    // Render the enemy
+    for(auto& ptr: this->enemies){
+        window->draw(ptr->player);
+        if(ptr->damageTimer.getElapsedTime().asSeconds() <= 0.6f){
+            ptr->healthStatus.draw(window);
+        }
+        for(bullet *b : ptr->bullets){
+            window->draw(b->sprite);
+        }
+    }
+
+    //Display everything
     window->display();
-    //window->draw(testTile->block);
     this->frameTimer.restart();
 }
+
 
 void Game::update(){
     
     // We check whether the player has moved since the last frame.
     // You will need to implement the Player::hasMoved() function.
+     // This will be your vector of Sprites
+    
+    
     float dt = this->frameTimer.getElapsedTime().asSeconds();
-    bool playerHasMoved = playerOne.update(*window, dt);
+    bool playerHasMoved = playerOne.update(*window, dt,this->tileSprites);
 
     
 
     //cout << this->playerOne.player.getPosition().x << std::endl;
     // Update the parallax background.
-    //background.update(playerHasMoved, view);
-    playerOne.checkForBulletCollision(this->testEnemy.bullets);
+    for(auto& enemy:this->enemies){
+        playerOne.checkForBulletCollision(enemy->bullets);
+    }
+    
     //cout << playerOne.getState() << ": 1" << endl;
     playerOne.onGround = false;
-    for(Tile *tile:this->tiles){
+    for(auto& tile : this->tiles){
         if(playerOne.isOnTopOfBlock(tile->block)){
             playerOne.onGround = true;
             playerOne.floatingBlockInteract = false;
             break;
         }
     }
+    
+
+
+
+
+    
     playerOne.onFloatingBlock = false;
+    background.update(playerHasMoved, backGroundView);
+    
+
     for(floatingTile *floatingBlock: this->floatingTiles){
         if(playerOne.isOnTopOfBlock(floatingBlock->block)){
             playerOne.onGround = true;
@@ -222,20 +273,25 @@ void Game::update(){
         }
     }
 
-    playerOne.update(*window, dt);
+    playerOne.update(*window, dt,this->tileSprites);
+    
+    
     //std::cout << this->testEnemy.player.getPosition().y << endl;
     //std::cout << playerOne.player.getPosition().y << endl
     //cout << playerOne.getState() << ": 2" << endl;
     for(floatingTile *tile : this->floatingTiles){
-        tile->update(&playerOne.player);
+        tile->update(&playerOne.player, &playerOne.healthStatus.bar, &playerOne.healthStatus.outline);
     }
     sf::Vector2f playerPos = playerOne.player.getPosition();
     float viewY = std::min(playerPos.y, initialBlockY - window->getSize().y / 2 + playerOne.player.getGlobalBounds().height);
-    view.setCenter(playerPos.x, viewY);
-    this->testEnemy.update(&playerOne.player);
+    view.setCenter(playerPos.x, 512.f-600);
+    for(auto& enemy:this->enemies){
+        enemy->update(&playerOne.player, playerOne.bulletSprites, playerOne.grenadeSprites);
+    }
     this->rect.setSize(Vector2f(playerOne.player.getGlobalBounds().width, playerOne.player.getGlobalBounds().height));
     this->rect.setPosition(Vector2f(playerOne.player.getPosition().x, 328.f)); //playerOne.player.getPosition().y
-    window->setView(view);
+    
     pollEvents();
+   
 
 }

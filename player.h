@@ -6,10 +6,12 @@ using namespace sf;
 #include "bullet.h"
 #include "Grenade.h"
 #include <vector>
+#include <SFML/Audio.hpp>
+#include "healthBar.h"
 #ifndef PLAYER_H
 #define PLAYER_H
 using namespace std;
-
+using namespace sf;
 class Player {
 private:
     Texture movementTexture;
@@ -17,6 +19,7 @@ private:
     Texture idleTexture;
     Texture shootingTexture;
     Texture hurtTexture;
+    Texture throwingTexture;
     unsigned int row;
     //Animation Animation;
     Clock animationTimer;
@@ -31,12 +34,19 @@ private:
     float groundYVal;
     Event mouseClick;
     Clock bulletTimer;
+    Clock debugTimer;
     bool shootingAnimationFinished;
     bool faceRight;
-
+    bool playGrenadeAnimation;
     Vector2f prevPos;
     string grenadeString;
-    
+    int tickCounter;
+    int debugCounter = 0;
+    SoundBuffer shootingSound;
+    SoundBuffer hurtSound;
+    SoundBuffer throwingSound;
+    Sound currSound;
+    float health;
     
     //vector<floatingTile*> floatingTiles;
 
@@ -44,6 +54,10 @@ private:
 
 
 public:
+    Clock damageTimer;
+    Clock healthBarShow;
+    healthBar healthStatus;
+    RectangleShape collisionRect;
     bool floatingBlockInteract;
     bool onFloatingBlock;
     int xVel;
@@ -52,11 +66,13 @@ public:
     Player();
     ~Player();
     std::vector<bullet*> bullets;
+    std::vector<Sprite*> bulletSprites;
     vector<Grenade*> grenades;
+    std::vector<Sprite*> grenadeSprites;
     int movementSpeed = 5;
     Sprite player;
     Sprite idleSprite;
-    int update(RenderWindow& win, float dt);
+    int update(RenderWindow& win, float dt, vector<Sprite*> tiles);
     void Draw(RenderWindow window);
     void animateRight();
     void setValues();

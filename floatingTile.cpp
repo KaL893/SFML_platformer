@@ -9,6 +9,7 @@ floatingTile::floatingTile(float lowerBound, float upperBound,bool xMoving,float
     IntRect rect(0, 0, 64, 64);
     this->block.setTextureRect(rect);
     this->block.setPosition(this->movementRange.x, yVal);
+    
     this->movementSpeed = movementSpeed;
     this->playerOnTop = false;
     this->vel = 1;
@@ -16,7 +17,7 @@ floatingTile::floatingTile(float lowerBound, float upperBound,bool xMoving,float
 }
 
 
-void floatingTile::update(Sprite *player){
+void floatingTile::update(Sprite *player, RectangleShape* bar, RectangleShape* outline){
     if(this->xMoving){
         if(this->block.getPosition().x <= this->movementRange.x){
             this->vel = 1;
@@ -28,6 +29,8 @@ void floatingTile::update(Sprite *player){
     this->block.move(this->movementSpeed * this->vel, 0);
     if(this->playerOnTop){
         player->move(this->movementSpeed * this->vel, 0);
+        bar->move(this->movementSpeed*this->vel, 0);
+        outline->move(this->movementSpeed*this->vel, 0);
     }
 
 }
