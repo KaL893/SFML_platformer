@@ -233,7 +233,7 @@ void Game::update(){
     
     
     float dt = this->frameTimer.getElapsedTime().asSeconds();
-    bool playerHasMoved = playerOne.update(*window, dt,this->tileSprites);
+    bool playerHasMoved = playerOne.update(*window, dt,this->tileSprites, view);
 
     
 
@@ -273,7 +273,7 @@ void Game::update(){
         }
     }
 
-    playerOne.update(*window, dt,this->tileSprites);
+    playerOne.update(*window, dt,this->tileSprites, view);
     
     
     //std::cout << this->testEnemy.player.getPosition().y << endl;
@@ -285,9 +285,14 @@ void Game::update(){
     sf::Vector2f playerPos = playerOne.player.getPosition();
     float viewY = std::min(playerPos.y, initialBlockY - window->getSize().y / 2 + playerOne.player.getGlobalBounds().height);
     view.setCenter(playerPos.x, 512.f-600);
-    for(auto& enemy:this->enemies){
-        enemy->update(&playerOne.player, playerOne.bulletSprites, playerOne.grenadeSprites);
+    for(auto& enemy : this->enemies){
+    enemy->update(&playerOne.player, playerOne.bullets, playerOne.grenadeSprites, view);
     }
+
+    this->enemies.erase(std::remove_if(this->enemies.begin(), this->enemies.end(), [](const std::shared_ptr<Enemy>& enemy){
+        return !enemy->active;
+    }), this->enemies.end());
+
     this->rect.setSize(Vector2f(playerOne.player.getGlobalBounds().width, playerOne.player.getGlobalBounds().height));
     this->rect.setPosition(Vector2f(playerOne.player.getPosition().x, 328.f)); //playerOne.player.getPosition().y
     

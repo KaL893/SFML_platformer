@@ -29,7 +29,7 @@ Grenade::Grenade(std::string& str, float movementSpeed, Vector2f velocity)
     this->currSound.setBuffer(this->explosionSound);
     this->explosionPlayed = false;
     this->currSound.setVolume(100.f);
-
+    this->collided = false;
 
 }
 
@@ -70,9 +70,9 @@ void Grenade::update(float dt, vector<Sprite*> blocks){
 
     for(Sprite *g:blocks){
         if(this->sprite.getGlobalBounds().intersects(g->getGlobalBounds())){
-           if(this->sprite.getPosition().y <= g->getPosition().y){
+           if(this->sprite.getPosition().y <= g->getPosition().y && !this->collided){
                 this->state = projectileState::Exploding;
-                
+                this->collided = true;
                 this->sprite.setPosition(this->sprite.getPosition().x, g->getPosition().y-128);
            }
         }

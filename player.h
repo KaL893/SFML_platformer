@@ -67,12 +67,13 @@ public:
     ~Player();
     std::vector<bullet*> bullets;
     std::vector<Sprite*> bulletSprites;
+    std::vector<bool> bulletActives;
     vector<Grenade*> grenades;
     std::vector<Sprite*> grenadeSprites;
     int movementSpeed = 5;
     Sprite player;
     Sprite idleSprite;
-    int update(RenderWindow& win, float dt, vector<Sprite*> tiles);
+    int update(RenderWindow& win, float dt, vector<Sprite*> tiles, View currentView);
     void Draw(RenderWindow window);
     void animateRight();
     void setValues();

@@ -18,7 +18,19 @@ Projectile::~Projectile(){
     
 }
 
-void Projectile::update(){
+void Projectile::update(View currentView)
+{
+
+    float viewLeft = currentView.getCenter().x - currentView.getSize().x / 2;
+    float viewRight = currentView.getCenter().x + currentView.getSize().x / 2;
+    float viewTop = currentView.getCenter().y - currentView.getSize().y / 2;
+    float viewBottom = currentView.getCenter().y + currentView.getSize().y / 2;
+    sf::FloatRect viewBounds(viewLeft, viewTop, viewRight - viewLeft, viewBottom - viewTop);
+
+    if (!(viewBounds.intersects(this->sprite.getGlobalBounds()))) {
+      this->active = false;  
+    } 
+
     if(this->active){
         this->sprite.move(this->velocity);
     }

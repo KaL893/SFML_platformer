@@ -1,7 +1,7 @@
 
 #include <iostream>
 #include <SFML/Graphics.hpp>
-
+#include <vector>
 using namespace sf;
 
 
@@ -13,14 +13,14 @@ class Projectile{
     protected:
         Texture texture;
         Vector2f velocity;
-        bool active;
         float movementSpeed;
         
     public:
+        bool active;
         Sprite sprite;
         Projectile(std::string& str, float movementSpeed, Vector2f velocity);
         virtual ~Projectile();
-        virtual void update();
+        virtual void update(View currentView);
 
 
 

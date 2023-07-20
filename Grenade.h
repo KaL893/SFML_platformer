@@ -30,6 +30,7 @@ private:
     SoundBuffer explosionSound;
     Sound currSound;
     bool explosionPlayed;
+    bool collided;
     void animateExplosion();
     
 public:

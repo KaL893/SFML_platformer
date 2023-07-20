@@ -246,6 +246,7 @@ bool Player::isOnTopOfBlock(Sprite block) {
     }
     if (playerHead.y <= blockBottom.y && playerHead.x >= blockBottom.x && playerHead.x <= blockBottom.x + block.getGlobalBounds().width && this->player.getPosition().y >= blockBottom.y) {
        this->yVel = 0;
+
     }
 
     
@@ -256,6 +257,7 @@ bool Player::isOnTopOfBlock(Sprite block) {
 void Player::checkForBulletCollision(std::vector<bullet*> &enemyBullets){
     for(bullet *b :enemyBullets){
         if(b->sprite.getGlobalBounds().intersects(this->collisionRect.getGlobalBounds())){
+            b->active = false;
             this->state = movementState::Hurt;
             if(this->damageTimer.getElapsedTime().asSeconds() >= .7f){
                 this->health -= 2;
@@ -267,7 +269,7 @@ void Player::checkForBulletCollision(std::vector<bullet*> &enemyBullets){
 }
 
 
-int Player::update(RenderWindow &win, float dt, vector<Sprite*> tiles){
+int Player::update(RenderWindow &win, float dt, vector<Sprite*> tiles, View currentView){
     bool keysPressed = false;
     bool playHurt = false;
     bool rightMoved = false;
@@ -427,6 +429,7 @@ int Player::update(RenderWindow &win, float dt, vector<Sprite*> tiles){
             sb->sprite.setPosition(playerPos.x+64, playerPos.y - 40); // set bullet position to player position
            
             this->bulletSprites.push_back(&(sb->sprite));
+            this->bulletActives.push_back(sb->active);
             this->bullets.push_back(sb); // add bullet to bullet list
         }
     }
@@ -455,8 +458,14 @@ int Player::update(RenderWindow &win, float dt, vector<Sprite*> tiles){
     }
     
     
-    for(bullet *b:this->bullets){
-        b->update();
+    for(auto it = this->bullets.begin(); it != this->bullets.end(); ) {
+        (*it)->update(currentView);
+        if(!(*it)->active) {
+            delete *it;
+            it = this->bullets.erase(it);
+        } else {
+            ++it;
+        }
     }
     
 

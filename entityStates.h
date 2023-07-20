@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-enum class movementState {Idle=0, IdleLeft, Right, Left, Jumping, Throwing, Shooting, Hurt};
+enum class movementState {Idle=0, IdleLeft, Right, Left, Jumping, Throwing, Shooting, Hurt, Dying};
 enum class projectileState {Moving=0, Exploding, Inactive};
 
 inline std::ostream& operator<<(std::ostream& os, const movementState& state)

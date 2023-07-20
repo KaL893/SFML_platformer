@@ -16,6 +16,7 @@ class Enemy{
         Texture hurtTexture;
         Texture idleTexture;
         Texture shootingTexture;
+        Texture dyingTexture;
         unsigned int row;
         //Animation Animation;
         Clock animationTimer;
@@ -48,20 +49,22 @@ class Enemy{
         SoundBuffer shootingSound;
         SoundBuffer hurtSound;
         Sound currSound;
-    
+        RectangleShape collisionRect;
 
 
 
     public:
+        bool active = true;
         Clock damageTimer;
         float health;
         healthBar healthStatus;
         vector<bullet*> bullets;
+        
         Vector2f movementRange;
         Sprite player;
         Enemy();
         ~Enemy();
-        void update(Sprite *playerSprite, vector<Sprite*> playerBuletSprites, vector<Sprite*> playerGrenadeSprites);
+        void update(Sprite *playerSprite, vector<bullet*> playerBullets, vector<Sprite*> playerGrenadeSprites, View currentView);
         void shoot();
         void render(RenderWindow *target);
 
