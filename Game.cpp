@@ -4,17 +4,8 @@
 #include "bullet.h"
 #include "string"
 #include "Grenade.h"
-#include <fstream>
-#include <string>
-#include <vector>
-using namespace std;
-
-
-
-#include <string>
-#include <sstream>
-#include <SFML/System.hpp>
-
+#include <iostream>
+#include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
 
 sf::Vector2f parseStringToVector2f(const std::string& str) {
@@ -26,6 +17,7 @@ sf::Vector2f parseStringToVector2f(const std::string& str) {
     cout << "x: " << x << " y:" << y << endl;
     return sf::Vector2f(x, y);
 }
+
 
 
 
@@ -69,6 +61,7 @@ Game::Game() : background(5.0f)
 
     std::string soldierMovementLines;
     std::ifstream soldierMovementRanges("soldierMovementRanges.txt");
+    initWindow();
     while(std::getline(soldierMovementRanges, soldierMovementLines)){
         Vector2f positions = parseStringToVector2f(soldierMovementLines);
         enemyPositions.push_back(positions);
@@ -77,7 +70,7 @@ Game::Game() : background(5.0f)
     this->gameSound.setLoop(true);
     this->gameSound.setBuffer(this->OST);
     //this->gameSound.play();
-
+    this->menu = new Menu(window->getSize().x, window->getSize().y);
 
 
     
@@ -114,6 +107,20 @@ Game::Game() : background(5.0f)
                 newEnemyRaw->movementRange = enemyPositions[enemyCount++];
                 shared_ptr<Enemy> newEnemy(newEnemyRaw);
                 this->enemies.push_back(newEnemy); 
+            }else if(c == '+'){
+                Spikes *sb_raw = new Spikes();
+                sb_raw->coordinates = Vector2f(xlvl, yLvl);
+                sb_raw->block.setPosition(sb_raw->coordinates);
+                std::shared_ptr<Spikes> sb(sb_raw);
+                this->spikeTiles.push_back(sb);
+                this->spikeSprites.push_back(&(sb->block));
+            }else if(c == 'h'){
+                healthPickup *sb_raw = new healthPickup();
+                sb_raw->coordinates = Vector2f(xlvl, yLvl);
+                sb_raw->block.setPosition(sb_raw->coordinates);
+                std::shared_ptr<healthPickup> sb(sb_raw);
+                this->healthPickups.push_back(sb);
+                this->healthPickupSprites.push_back(&(sb->block));
             }
             
 
@@ -128,13 +135,12 @@ Game::Game() : background(5.0f)
     //std::cout << "playerBottom " << playerOne.player.getPosition().y + playerOne.player.getGlobalBounds().height << std::endl;
     
     playerOne.groundYvalSetter(value);
-    initWindow();
     this->rect.setSize(Vector2f(playerOne.player.getGlobalBounds().width, playerOne.player.getGlobalBounds().height));
     this->rect.setFillColor(Color(255, 0, 0));
     this->rect.setPosition(Vector2f(100.f, 200.f));
     this->rect.setOrigin(rect.getSize().x / 2.0f, rect.getSize().y / 2.0f);
     view.setSize(1200, 1200);
-    
+    this->gameStarted = false;
 
     sf::Vector2i topLeftWindow(0, 0); // Top-left corner of the window in window coordinates
     
@@ -152,6 +158,7 @@ void Game::initWindow(){
 
 Game::~Game(){
     delete window;
+    delete this->menu;
     for(floatingTile* sb: this->floatingTiles){
         delete sb;
     }
@@ -159,12 +166,15 @@ Game::~Game(){
 }
 
 
-void Game::pollEvents(){
+void Game::pollEvents()
+{
     while (window->pollEvent(ev)){
         if(ev.type == Event::Closed){
             window->close();
             running = false;
         }
+                
+        
     }
 }
 
@@ -178,50 +188,62 @@ void Game::drawGround(){
 void Game::render() {
     window->clear();
 
-    // Set the background view and draw the parallax background
-    window->setView(backGroundView);
-    background.render(*window);
+    if(this->gameStarted){
+            // Set the background view and draw the parallax background
+        window->setView(backGroundView);
+        background.render(*window);
 
-    //Set the game view before drawing the game objects
-    window->setView(view);
+        //Set the game view before drawing the game objects
+        window->setView(view);
 
-    //Draw the player
-    window->draw(playerOne.player);
-    if(playerOne.damageTimer.getElapsedTime().asSeconds() <= 0.6f){
-        playerOne.healthStatus.draw(window);
-    }
-    // Draw the other elements
-    for(bullet *b : playerOne.bullets) {
-        window->draw(b->sprite);
-    }
-
-    for(Grenade *g : this->playerOne.grenades) {
-        window->draw(g->sprite);
-    }
-
-    for(auto& t : this->tiles) {
-        window->draw(t->block);
-    }
-
-
-    for(floatingTile *tile : this->floatingTiles) {
-        window->draw(tile->block);
-    }
-
-    // Render the enemy
-    for(auto& ptr: this->enemies){
-        window->draw(ptr->player);
-        if(ptr->damageTimer.getElapsedTime().asSeconds() <= 0.6f){
-            ptr->healthStatus.draw(window);
+        //Draw the player
+        window->draw(playerOne.player);
+        if(playerOne.damageTimer.getElapsedTime().asSeconds() <= 0.6f){
+            playerOne.healthStatus.draw(window);
         }
-        for(bullet *b : ptr->bullets){
+        // Draw the other elements
+        for(bullet *b : playerOne.bullets) {
             window->draw(b->sprite);
         }
-    }
 
-    //Display everything
+        for(Grenade *g : this->playerOne.grenades) {
+            window->draw(g->sprite);
+        }
+
+        for(auto& t : this->tiles) {
+            window->draw(t->block);
+        }
+
+
+        for(floatingTile *tile : this->floatingTiles) {
+            window->draw(tile->block);
+        }
+
+        for(auto &p : this->spikeTiles){
+            window->draw(p->block);
+        }
+
+        for(auto& health:this->healthPickups){
+            window->draw(health->block);
+        }
+
+        // Render the enemy
+        for(auto& ptr: this->enemies){
+            window->draw(ptr->player);
+            if(ptr->damageTimer.getElapsedTime().asSeconds() <= 0.6f){
+                ptr->healthStatus.draw(window);
+            }
+            for(bullet *b : ptr->bullets){
+                window->draw(b->sprite);
+            }
+        }
+        
+        //Display everything
+        this->frameTimer.restart();
+    }else{
+        this->menu->draw(*this->window);
+    }
     window->display();
-    this->frameTimer.restart();
 }
 
 
@@ -231,72 +253,115 @@ void Game::update(){
     // You will need to implement the Player::hasMoved() function.
      // This will be your vector of Sprites
     
-    
-    float dt = this->frameTimer.getElapsedTime().asSeconds();
-    bool playerHasMoved = playerOne.update(*window, dt,this->tileSprites, view);
-
-    
-
-    //cout << this->playerOne.player.getPosition().x << std::endl;
-    // Update the parallax background.
-    for(auto& enemy:this->enemies){
-        playerOne.checkForBulletCollision(enemy->bullets);
-    }
-    
-    //cout << playerOne.getState() << ": 1" << endl;
-    playerOne.onGround = false;
-    for(auto& tile : this->tiles){
-        if(playerOne.isOnTopOfBlock(tile->block)){
-            playerOne.onGround = true;
-            playerOne.floatingBlockInteract = false;
-            break;
-        }
-    }
-    
-
-
-
-
-    
-    playerOne.onFloatingBlock = false;
-    background.update(playerHasMoved, backGroundView);
-    
-
-    for(floatingTile *floatingBlock: this->floatingTiles){
-        if(playerOne.isOnTopOfBlock(floatingBlock->block)){
-            playerOne.onGround = true;
-            playerOne.onFloatingBlock = true;
-            playerOne.floatingBlockInteract = true;
-            floatingBlock->playerOnTop = true;
-        }else{
-            floatingBlock->playerOnTop = false;
-        }
-    }
-
-    playerOne.update(*window, dt,this->tileSprites, view);
-    
-    
-    //std::cout << this->testEnemy.player.getPosition().y << endl;
-    //std::cout << playerOne.player.getPosition().y << endl
-    //cout << playerOne.getState() << ": 2" << endl;
-    for(floatingTile *tile : this->floatingTiles){
-        tile->update(&playerOne.player, &playerOne.healthStatus.bar, &playerOne.healthStatus.outline);
-    }
-    sf::Vector2f playerPos = playerOne.player.getPosition();
-    float viewY = std::min(playerPos.y, initialBlockY - window->getSize().y / 2 + playerOne.player.getGlobalBounds().height);
-    view.setCenter(playerPos.x, 512.f-600);
-    for(auto& enemy : this->enemies){
-    enemy->update(&playerOne.player, playerOne.bullets, playerOne.grenadeSprites, view);
-    }
-
-    this->enemies.erase(std::remove_if(this->enemies.begin(), this->enemies.end(), [](const std::shared_ptr<Enemy>& enemy){
-        return !enemy->active;
-    }), this->enemies.end());
-
-    this->rect.setSize(Vector2f(playerOne.player.getGlobalBounds().width, playerOne.player.getGlobalBounds().height));
-    this->rect.setPosition(Vector2f(playerOne.player.getPosition().x, 328.f)); //playerOne.player.getPosition().y
-    
     pollEvents();
+    if(this->gameStarted){
+        if(this->enemies.size() == 0){
+            this->gameStarted = false;
+            this->menu->startButton.setString("WOHOOO");
+            this->menu->instructions.setString("you killed all of the bad guys");
+            this->menu->start = false;
+        }
+        float dt = this->frameTimer.getElapsedTime().asSeconds();
+        bool playerHasMoved = playerOne.update(*window, dt,this->tileSprites,this->spikeSprites ,view);
+
+        
+
+        //cout << this->playerOne.player.getPosition().x << std::endl;
+        // Update the parallax background.
+        for(auto& enemy:this->enemies){
+            playerOne.checkForBulletCollision(enemy->bullets);
+        }
+        
+        //cout << playerOne.getState() << ": 1" << endl;
+        playerOne.onGround = false;
+        for(auto& tile : this->tiles){
+            if(playerOne.isOnTopOfBlock(tile->block)){
+                playerOne.onGround = true;
+                playerOne.floatingBlockInteract = false;
+                break;
+            }
+        }
+        for(auto& tile: this->spikeTiles){
+            if(playerOne.isOnTopOfBlock(tile->block)){
+                playerOne.onGround = true;
+                playerOne.floatingBlockInteract = false;
+                playerOne.lastState = playerOne.state;
+                playerOne.state = movementState::Hurt;
+                if(playerOne.damageTimer.getElapsedTime().asSeconds() >= 1.5f){
+                    playerOne.health -= 4;
+                    playerOne.damageTimer.restart();
+                }
+                break;
+            }
+        }
+        
+
+        // for(auto& health: this->healthPickups){
+        //     health->update();
+        // }
+
+
+        
+        playerOne.onFloatingBlock = false;
+        background.update(playerHasMoved, backGroundView);
+        
+
+        for(floatingTile *floatingBlock: this->floatingTiles){
+            if(playerOne.isOnTopOfBlock(floatingBlock->block)){
+                playerOne.onGround = true;
+                playerOne.onFloatingBlock = true;
+                playerOne.floatingBlockInteract = true;
+                floatingBlock->playerOnTop = true;
+            }else{
+                floatingBlock->playerOnTop = false;
+            }
+        }
+
+        playerOne.update(*window, dt,this->tileSprites,this->spikeSprites ,view);
+        
+        
+        //std::cout << this->testEnemy.player.getPosition().y << endl;
+        //std::cout << playerOne.player.getPosition().y << endl
+        //cout << playerOne.getState() << ": 2" << endl;
+        for(floatingTile *tile : this->floatingTiles){
+            tile->update(&playerOne.player, &playerOne.healthStatus.bar, &playerOne.healthStatus.outline);
+        }
+        sf::Vector2f playerPos = playerOne.player.getPosition();
+        float viewY = std::min(playerPos.y, initialBlockY - window->getSize().y / 2 + playerOne.player.getGlobalBounds().height);
+        // if(playerPos.y > 390){
+            
+        // }else{
+        //     if(playerOne.yLvlBeforeJumping <= 390){
+        //         view.setCenter(playerPos.x, -88.f);
+        //     }
+        // }
+        if(playerPos.y > 390){
+            view.setCenter(playerPos.x, 168);
+        }else{
+            view.setCenter(playerPos.x, -88);
+        }
+        
+        for(auto& enemy : this->enemies){
+        enemy->update(&playerOne.player, playerOne.bullets, playerOne.grenadeSprites, view);
+        }
+
+        this->enemies.erase(std::remove_if(this->enemies.begin(), this->enemies.end(), [](const std::shared_ptr<Enemy>& enemy){
+            return !enemy->active;
+        }), this->enemies.end());
+
+        this->rect.setSize(Vector2f(20, 20));
+        this->rect.setPosition(Vector2f(playerOne.player.getPosition().x, -88)); //playerOne.player.getPosition().y
+    }else{
+        if(Mouse::isButtonPressed(Mouse::Left) && this->menu->start){
+            
+                // Check if mouse is inside the button:
+                if(menu->startButton.getGlobalBounds().contains(window->mapPixelToCoords(sf::Mouse::getPosition(*window)))){
+                    this->gameStarted = true;
+                }
+            
+        }
+    }
+    
    
 
 }

@@ -1,16 +1,24 @@
 #include <iostream>
-#include <SFML/Graphics.hpp>
+
 #include "player.h"
 #include "stoneBlock.h"
 #include "Tile.h"
 #include "Parralax.h"
+#include "Spikes.h"
 #include "floatingTile.h"
 #include <vector>
 #include <SFML/Audio.hpp>
 #include "Enemy.h"
 #include "memory"
+#include "healthPickup.h"
+#include "Menu.h"
 using namespace sf;
 using namespace std;
+
+
+enum gameState {Start, Playing, End};
+
+
 class Game{
     private:
         Parralax background;
@@ -22,6 +30,10 @@ class Game{
         stoneBlock *testBlock;
         vector<shared_ptr<Tile>> tiles;
         vector<Sprite*> tileSprites;
+        vector<shared_ptr<Spikes>> spikeTiles;
+        vector<Sprite*> spikeSprites;
+        vector<shared_ptr<healthPickup>> healthPickups;
+        vector<Sprite*> healthPickupSprites;
         View view;
         void initWindow();
         void pollEvents();
@@ -39,6 +51,12 @@ class Game{
         Clock frameTimer;
         SoundBuffer OST;
         Sound gameSound;
+        Menu *menu;
+        gameState gameSt;
+        bool gameStarted;
+
+        
+        
         
 
     public:

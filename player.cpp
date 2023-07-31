@@ -258,6 +258,7 @@ void Player::checkForBulletCollision(std::vector<bullet*> &enemyBullets){
     for(bullet *b :enemyBullets){
         if(b->sprite.getGlobalBounds().intersects(this->collisionRect.getGlobalBounds())){
             b->active = false;
+            this->lastState = this->state;
             this->state = movementState::Hurt;
             if(this->damageTimer.getElapsedTime().asSeconds() >= .7f){
                 this->health -= 2;
@@ -269,7 +270,7 @@ void Player::checkForBulletCollision(std::vector<bullet*> &enemyBullets){
 }
 
 
-int Player::update(RenderWindow &win, float dt, vector<Sprite*> tiles, View currentView){
+int Player::update(RenderWindow &win, float dt, vector<Sprite*> tiles,vector<Sprite*> spikes ,View currentView){
     bool keysPressed = false;
     bool playHurt = false;
     bool rightMoved = false;
@@ -286,9 +287,8 @@ int Player::update(RenderWindow &win, float dt, vector<Sprite*> tiles, View curr
     
     if(!(this->onGround)){
         this->yVel += this->gravity;
-       
     }else if(this->yVel >= 0 && this->state != movementState::Hurt && this->state != movementState::Throwing){
-       
+        this->isJumping = false;
         this->state = movementState::Idle;
         this->yVel = 0;
         //this->player.setPosition(this->player.getPosition().x, this->groundYVal - this->player.getGlobalBounds().height/2);
@@ -385,12 +385,13 @@ int Player::update(RenderWindow &win, float dt, vector<Sprite*> tiles, View curr
 
     
 
-    if(Keyboard::isKeyPressed(Keyboard::Space) && this->onGround && this->jumpTimer.getElapsedTime().asSeconds() > 0.1f){
+    if(Keyboard::isKeyPressed(Keyboard::Space) && this->onGround && this->jumpTimer.getElapsedTime().asSeconds() > 0.2f){
         this->prevPos = player.getPosition();
         this->state = movementState::Jumping;
         this->yVel = -this->jumpSpeed; // Set yVel to negative jumpSpeed, not subtract it
         this->jumpTimer.restart();
-        
+        this->yLvlBeforeJumping = this->player.getPosition().y;
+        this->isJumping = true;
     }
 
    

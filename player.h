@@ -5,6 +5,7 @@ using namespace sf;
 #include "entityStates.h"
 #include "bullet.h"
 #include "Grenade.h"
+
 #include <vector>
 #include <SFML/Audio.hpp>
 #include "healthBar.h"
@@ -25,8 +26,6 @@ private:
     Clock animationTimer;
     Clock jumpTimer;
     IntRect rect;
-    movementState state;
-    movementState lastState;
     float yVel;
     float gravity;
     float jumpSpeed;
@@ -46,7 +45,6 @@ private:
     SoundBuffer hurtSound;
     SoundBuffer throwingSound;
     Sound currSound;
-    float health;
     
     //vector<floatingTile*> floatingTiles;
 
@@ -54,6 +52,9 @@ private:
 
 
 public:
+    float health;
+    movementState lastState;
+    movementState state;
     Clock damageTimer;
     Clock healthBarShow;
     healthBar healthStatus;
@@ -73,7 +74,7 @@ public:
     int movementSpeed = 5;
     Sprite player;
     Sprite idleSprite;
-    int update(RenderWindow& win, float dt, vector<Sprite*> tiles, View currentView);
+    int update(RenderWindow& win, float dt, vector<Sprite*> tiles, vector<Sprite*> spikes, View currentView);
     void Draw(RenderWindow window);
     void animateRight();
     void setValues();
@@ -84,6 +85,8 @@ public:
     movementState getState();
     void groundYvalSetter(float value);
     void checkForBulletCollision(vector<bullet*> &enemyBullets);
+    bool isJumping;
+    float yLvlBeforeJumping;
 
     
 
