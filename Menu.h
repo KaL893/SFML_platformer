@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <SFML/Graphics.hpp>
+using namespace sf;
 class Menu
 {
 public:
@@ -13,6 +14,7 @@ public:
     sf::Font font;
     sf::Text startButton;
     sf::Text instructions;
+    Text end;
     bool start;
 private:
 };

@@ -69,7 +69,7 @@ Game::Game() : background(5.0f)
     this->OST.loadFromFile("OST.ogg");
     this->gameSound.setLoop(true);
     this->gameSound.setBuffer(this->OST);
-    //this->gameSound.play();
+    this->gameSound.play();
     this->menu = new Menu(window->getSize().x, window->getSize().y);
 
 
@@ -242,6 +242,14 @@ void Game::render() {
         this->frameTimer.restart();
     }else{
         this->menu->draw(*this->window);
+        if(!this->menu->start){
+            view.setCenter(this->menu->end.getPosition().x+200, this->menu->end.getPosition().y);
+            this->window->setView(view);
+        
+            
+            
+        }
+        
     }
     window->display();
 }
@@ -257,9 +265,9 @@ void Game::update(){
     if(this->gameStarted){
         if(this->enemies.size() == 0){
             this->gameStarted = false;
-            this->menu->startButton.setString("WOHOOO");
-            this->menu->instructions.setString("you killed all of the bad guys");
+
             this->menu->start = false;
+            
         }
         float dt = this->frameTimer.getElapsedTime().asSeconds();
         bool playerHasMoved = playerOne.update(*window, dt,this->tileSprites,this->spikeSprites ,view);
@@ -335,8 +343,9 @@ void Game::update(){
         //         view.setCenter(playerPos.x, -88.f);
         //     }
         // }
-        if(playerPos.y > 390){
+        if(playerPos.y > 400 || (playerPos.y < 400 && playerOne.yLvlBeforeJumping > 400)){
             view.setCenter(playerPos.x, 168);
+            
         }else{
             view.setCenter(playerPos.x, -88);
         }
@@ -358,6 +367,7 @@ void Game::update(){
                 if(menu->startButton.getGlobalBounds().contains(window->mapPixelToCoords(sf::Mouse::getPosition(*window)))){
                     this->gameStarted = true;
                 }
+                
             
         }
     }

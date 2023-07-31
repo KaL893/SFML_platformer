@@ -242,7 +242,7 @@ void Enemy::update(Sprite *playerSprite, vector<bullet*> playerBullets, vector<S
                     b->active = false;
                     this->damageTimer.restart();
                     this->currSound.setBuffer(this->hurtSound);
-                    //this->currSound.play();
+                    this->currSound.play();
                     this->state = movementState::Hurt;
                     this->hurtAnimationFinished = false;
                     this->rect.left = 0;
@@ -266,7 +266,7 @@ void Enemy::update(Sprite *playerSprite, vector<bullet*> playerBullets, vector<S
 
                     
                     this->currSound.setBuffer(this->hurtSound);
-                    //this->currSound.play();
+                    this->currSound.play();
                     this->state = movementState::Hurt;
                     this->hurtAnimationFinished = false;
                     this->rect.left = 0;
@@ -289,7 +289,7 @@ void Enemy::update(Sprite *playerSprite, vector<bullet*> playerBullets, vector<S
                     }
 
                     this->currSound.setBuffer(this->shootingSound);
-                    //this->currSound.play();
+                    this->currSound.play();
                     this->state = movementState::Shooting;
                     this->rect.height = 61;
                     this->rect.left = 0;
@@ -313,7 +313,7 @@ void Enemy::update(Sprite *playerSprite, vector<bullet*> playerBullets, vector<S
                         this->pastState = this->state;
                     }
                     this->currSound.setBuffer(this->shootingSound);
-                    //this->currSound.play();
+                    this->currSound.play();
                     this->state = movementState::Shooting;
                     this->rect.height = 61;
                     this->rect.left = 0;

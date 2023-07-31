@@ -20,6 +20,12 @@ Menu::Menu(float width, float height)
     instructions.setString("WASD to move, Space bar to jump, aim with mouse, left to shoot bullets, and G to throw grenades");
     instructions.setPosition(sf::Vector2f(width / 4, height / 2));
     start = true;
+    end.setFont(font);
+    end.setCharacterSize(40);
+    end.setFillColor(sf::Color::White);
+    end.setString("WOHOOO you killed all the bad guys!!");
+    end.setPosition(sf::Vector2f(width / 4, height / 2));
+
 }
 
 Menu::~Menu()
@@ -28,7 +34,12 @@ Menu::~Menu()
 
 void Menu::draw(sf::RenderWindow &window)
 {
-    window.draw(startButton);
-    window.draw(instructions);
+    if(start){
+        window.draw(startButton);
+        window.draw(instructions);
+    }else{
+        window.draw(end);
+        
+    }
     
 }
